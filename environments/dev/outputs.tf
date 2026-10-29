@@ -1,14 +1,14 @@
 output "s3_bucket_name" {
   description = "Name of the Django storage bucket"
-  value       = aws_s3_bucket.django_storage.bucket
+  value       = module.storage.bucket_name
 }
 
 output "s3_bucket_arn" {
   description = "ARN of the Django storage bucket"
-  value       = aws_s3_bucket.django_storage.arn
+  value       = module.storage.bucket_arn
 }
 
 output "s3_bucket_region" {
-  description = "Region of the Django storage bucket"
+  description = "AWS region where the bucket is deployed"
   value       = var.aws_region
 }
