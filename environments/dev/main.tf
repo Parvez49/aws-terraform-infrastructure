@@ -20,3 +20,15 @@ module "network" {
   vpc_cidr          = "10.0.0.0/16"
   availability_zone = "ap-southeast-2a"
 }
+
+module "security" {
+  source = "../../modules/security"
+
+  vpc_id              = module.network.vpc_id
+  security_group_name = "django-infrastructure-dev-ec2"
+  environment         = "dev"
+  project_name        = "django-infrastructure"
+  ssh_cidrs = [
+    "223.29.215.50/32",
+  ]
+}
