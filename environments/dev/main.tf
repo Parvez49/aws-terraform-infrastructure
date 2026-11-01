@@ -43,7 +43,7 @@ module "compute" {
 
   # SSH key pair
   key_name        = "django-infrastructure-dev"
-  public_key_path = "~/.ssh/aws-django-dev.pub"
+  public_key_path = "${path.root}/aws-django-dev.pub"
 
   # EC2 configuration
   instance_name = "django-infrastructure-dev-ec2"
