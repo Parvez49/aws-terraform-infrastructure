@@ -30,5 +30,29 @@ module "security" {
   project_name        = "django-infrastructure"
   ssh_cidrs = [
     "223.29.215.50/32",
+    "223.29.215.61/32",
+    "223.29.215.58/32",
+    "223.29.215.54/32",
+    "223.29.215.48/32",
+    "223.29.215.0/24",
   ]
+}
+
+module "compute" {
+  source = "../../modules/compute"
+
+  # SSH key pair
+  key_name        = "django-infrastructure-dev"
+  public_key_path = "~/.ssh/aws-django-dev.pub"
+
+  # EC2 configuration
+  instance_name = "django-infrastructure-dev-ec2"
+  instance_type = "t3.micro"
+
+  # Network configuration
+  subnet_id         = module.network.public_subnet_id
+  security_group_id = module.security.security_group_id
+
+  # Environment
+  environment = "dev"
 }

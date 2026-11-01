@@ -42,3 +42,23 @@ output "private_subnet_cidr" {
   description = "CIDR block of the Dev private subnet"
   value       = module.network.private_subnet_cidr
 }
+
+output "ec2_instance_id" {
+  description = "ID of the Dev EC2 instance"
+  value       = module.compute.instance_id
+}
+
+output "ec2_public_ip" {
+  description = "Public IP of the Dev EC2 instance"
+  value       = module.compute.instance_public_ip
+}
+
+output "ec2_private_ip" {
+  description = "Private IP of the Dev EC2 instance"
+  value       = module.compute.instance_private_ip
+}
+
+output "ec2_public_dns" {
+  description = "Public DNS of the Dev EC2 instance"
+  value       = module.compute.instance_public_dns
+}
