@@ -62,3 +62,18 @@ output "ec2_public_dns" {
   description = "Public DNS of the Dev EC2 instance"
   value       = module.compute.instance_public_dns
 }
+
+output "security_group_id" {
+  description = "ID of the Dev EC2 security group"
+  value       = module.security.security_group_id
+}
+
+output "ec2_iam_role_name" {
+  description = "Name of the IAM role attached to the Dev EC2 instance"
+  value       = module.iam.role_name
+}
+
+output "ec2_instance_profile_name" {
+  description = "Name of the instance profile attached to the Dev EC2 instance"
+  value       = module.iam.instance_profile_name
+}

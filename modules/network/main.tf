@@ -1,3 +1,6 @@
+# Environment / Project / ManagedBy come from the provider's default_tags in
+# the environment root, so resources here only set Name.
+
 resource "aws_vpc" "main" {
   cidr_block = var.vpc_cidr
 
@@ -5,10 +8,18 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
 
   tags = {
-    Name        = var.vpc_name
-    Environment = var.environment
-    Project     = var.project_name
-    ManagedBy   = "Terraform"
+    Name = var.vpc_name
+  }
+}
+
+# Every VPC ships with a default security group that allows all traffic between
+# its own members. Nothing here uses it, so adopt it and strip every rule
+# rather than leaving a permissive group lying around.
+resource "aws_default_security_group" "main" {
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name = "${var.vpc_name}-default-do-not-use"
   }
 }
 
@@ -19,10 +30,7 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name        = "${var.vpc_name}-public-subnet"
-    Environment = var.environment
-    Project     = var.project_name
-    ManagedBy   = "Terraform"
+    Name = "${var.vpc_name}-public-subnet"
   }
 }
 
@@ -34,10 +42,7 @@ resource "aws_subnet" "private" {
   map_public_ip_on_launch = false
 
   tags = {
-    Name        = "${var.vpc_name}-private-subnet"
-    Environment = var.environment
-    Project     = var.project_name
-    ManagedBy   = "Terraform"
+    Name = "${var.vpc_name}-private-subnet"
   }
 }
 
@@ -45,10 +50,7 @@ resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name        = "${var.vpc_name}-igw"
-    Environment = var.environment
-    Project     = var.project_name
-    ManagedBy   = "Terraform"
+    Name = "${var.vpc_name}-igw"
   }
 }
 
@@ -56,10 +58,7 @@ resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name        = "${var.vpc_name}-public-route-table"
-    Environment = var.environment
-    Project     = var.project_name
-    ManagedBy   = "Terraform"
+    Name = "${var.vpc_name}-public-route-table"
   }
 }
 
@@ -74,14 +73,15 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
+# Deliberately has no 0.0.0.0/0 route: reaching the internet from a private
+# subnet needs a NAT gateway (~USD 32/month), which this project does not run.
+# Anything placed in the private subnet therefore has no outbound internet
+# access and cannot install packages.
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name        = "${var.vpc_name}-private-route-table"
-    Environment = var.environment
-    Project     = var.project_name
-    ManagedBy   = "Terraform"
+    Name = "${var.vpc_name}-private-route-table"
   }
 }
 

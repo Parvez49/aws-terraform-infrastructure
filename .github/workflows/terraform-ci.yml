@@ -6,6 +6,8 @@ on:
       - "**/*.tf"
       - "**/*.tfvars.example"
       - "**/.terraform.lock.hcl"
+      - ".tflint.hcl"
+      - ".checkov.yml"
       - ".github/workflows/**"
 
   push:
@@ -15,6 +17,8 @@ on:
       - "**/*.tf"
       - "**/*.tfvars.example"
       - "**/.terraform.lock.hcl"
+      - ".tflint.hcl"
+      - ".checkov.yml"
       - ".github/workflows/**"
 
   workflow_dispatch:
@@ -57,3 +61,57 @@ jobs:
       - name: Terraform Validate
         working-directory: environments/${{ matrix.environment }}
         run: terraform validate -no-color
+
+  tflint:
+    name: TFLint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: Init TFLint plugins
+        run: tflint --init
+
+      # Lint each directory that actually contains non-empty .tf files. This
+      # skips the empty placeholder dirs (modules/database, modules/django,
+      # environments/production), which would otherwise fail the
+      # terraform_required_version rule.
+      - name: Run TFLint
+        run: |
+          set -euo pipefail
+          dirs=$(find bootstrap environments modules -name '*.tf' -size +0c -printf '%h\n' | sort -u)
+          echo "Linting:"; echo "$dirs"
+          status=0
+          for dir in $dirs; do
+            echo "::group::tflint $dir"
+            tflint --chdir="$dir" --config="$PWD/.tflint.hcl" --format=compact || status=1
+            echo "::endgroup::"
+          done
+          exit $status
+
+  checkov:
+    name: Checkov Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Installed via pip rather than a third-party action so the version is
+      # pinned here and there is no action tag to keep chasing.
+      - name: Install Checkov
+        run: pip install --disable-pip-version-check "checkov==3.*"
+
+      - name: Run Checkov
+        run: checkov --directory . --framework terraform --config-file .checkov.yml

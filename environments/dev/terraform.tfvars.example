@@ -1,1 +1,10 @@
-aws_region = "ap-southeast-2"
+aws_region   = "ap-southeast-2"
+environment  = "dev"
+project_name = "django-infrastructure"
+
+# Public IPs allowed to SSH into the EC2 instance. Required, no default.
+# Find yours with: curl -s https://checkip.amazonaws.com
+# Prefer single-host /32 entries over a whole ISP /24.
+ssh_cidrs = [
+  "203.0.113.4/32",
+]

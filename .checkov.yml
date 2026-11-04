@@ -1,0 +1,42 @@
+framework:
+  - terraform
+
+directory:
+  - .
+
+compact: true
+quiet: true
+
+# Every skip below is a deliberate, documented decision for this project rather
+# than a way to silence the scanner. Anything not listed here fails CI, so new
+# findings have to be looked at.
+skip-check:
+  # --- Intentional architecture: one public web server, no NAT and no load balancer ---
+  # EC2 instance should not have public IP.
+  - CKV_AWS_88
+  # VPC subnets should not assign public IP by default. The public subnet must.
+  - CKV_AWS_130
+  # Security group allows ingress from 0.0.0.0/0 to port 80. It is a public site.
+  - CKV_AWS_260
+
+  # --- Costs money, out of scope for a free-tier learning account ---
+  # Detailed EC2 monitoring is a paid CloudWatch feature; monitoring = false is deliberate.
+  - CKV_AWS_126
+  # VPC flow logs bill per GB ingested into CloudWatch Logs.
+  - CKV2_AWS_11
+  # S3 cross-region replication doubles storage cost and needs a second region.
+  - CKV_AWS_144
+  # S3 access logging needs a second bucket plus its storage cost.
+  - CKV_AWS_18
+  # SSE-KMS with a customer managed key adds per-request and per-key charges.
+  # Buckets here use SSE-S3 (AES256), which is enabled and free.
+  - CKV_AWS_145
+
+  # --- Not applicable ---
+  # t3 instances are EBS-optimized by default and the flag cannot be set.
+  - CKV_AWS_135
+  # S3 event notifications need a consumer; there is none.
+  - CKV2_AWS_62
+  # False positive: the group is attached to the instance through the compute
+  # module's security_group_id variable, which Checkov cannot trace across roots.
+  - CKV2_AWS_5

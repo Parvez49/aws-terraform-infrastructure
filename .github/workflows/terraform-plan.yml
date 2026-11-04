@@ -46,6 +46,13 @@ jobs:
       run:
         working-directory: environments/${{ matrix.environment }}
 
+    # ssh_cidrs is a required variable with no default and lives in the
+    # gitignored terraform.tfvars locally, so CI supplies it here. Set the
+    # repository variable SSH_CIDRS to a JSON list, e.g. ["203.0.113.4/32"].
+    # Ignored by roots that do not declare the variable, such as staging.
+    env:
+      TF_VAR_ssh_cidrs: ${{ vars.SSH_CIDRS }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

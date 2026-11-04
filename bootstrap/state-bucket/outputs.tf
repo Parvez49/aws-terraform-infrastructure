@@ -10,5 +10,5 @@ output "terraform_state_bucket_arn" {
 
 output "terraform_state_bucket_region" {
   description = "Region of the Terraform state bucket"
-  value       = "ap-southeast-2"
+  value       = var.aws_region
 }

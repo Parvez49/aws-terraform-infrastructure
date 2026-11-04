@@ -1,11 +1,12 @@
+# Environment / Project / ManagedBy come from the provider's default_tags in
+# the environment root, so resources here only set Name.
+
 resource "aws_key_pair" "main" {
   key_name   = var.key_name
   public_key = file(pathexpand(var.public_key_path))
 
   tags = {
-    Name      = var.key_name
-    Project   = var.project_name
-    ManagedBy = "Terraform"
+    Name = var.key_name
   }
 }
 
@@ -19,8 +20,12 @@ resource "aws_instance" "main" {
 
   key_name = aws_key_pair.main.key_name
 
+  # Lets the instance reach AWS APIs through a role instead of long-lived
+  # access keys baked into the application config.
+  iam_instance_profile = var.iam_instance_profile_name
+
   root_block_device {
-    volume_size           = 8
+    volume_size           = var.root_volume_size
     volume_type           = "gp3"
     encrypted             = true
     delete_on_termination = true
@@ -33,9 +38,6 @@ resource "aws_instance" "main" {
   monitoring = false
 
   tags = {
-    Name        = var.instance_name
-    Environment = var.environment
-    Project     = var.project_name
-    ManagedBy   = "Terraform"
+    Name = var.instance_name
   }
 }

@@ -41,6 +41,11 @@ jobs:
       run:
         working-directory: environments/${{ inputs.environment }}
 
+    # Applying a saved plan file does not re-evaluate variables, but init and
+    # any refresh still load them. Kept in sync with terraform-plan.yml.
+    env:
+      TF_VAR_ssh_cidrs: ${{ vars.SSH_CIDRS }}
+
     steps:
       # These two run before checkout, so the job-level working-directory
       # (environments/<env>) does not exist yet — override it to the workspace.
