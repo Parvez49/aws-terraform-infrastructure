@@ -46,16 +46,39 @@ jobs:
       run:
         working-directory: environments/${{ matrix.environment }}
 
-    # ssh_cidrs is a required variable with no default and lives in the
-    # gitignored terraform.tfvars locally, so CI supplies it here. Set the
-    # repository variable SSH_CIDRS to a JSON list, e.g. ["203.0.113.4/32"].
-    # Ignored by roots that do not declare the variable, such as staging.
-    env:
-      TF_VAR_ssh_cidrs: ${{ vars.SSH_CIDRS }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      # TF_VAR_ssh_cidrs is exported here rather than as a job-level env var.
+      # A job-level `TF_VAR_ssh_cidrs: ${{ vars.SSH_CIDRS }}` renders to an
+      # empty string when the variable is unset, and Terraform then fails
+      # parsing "" as HCL with a misleading "Missing expression" error during
+      # init. Exporting it only when it is actually set keeps the failure clear.
+      - name: Resolve ssh_cidrs
+        env:
+          SSH_CIDRS: ${{ vars.SSH_CIDRS }}
+        run: |
+          if ! grep -qr 'variable "ssh_cidrs"' . ; then
+            echo "This root does not declare ssh_cidrs, nothing to export."
+            exit 0
+          fi
+
+          if [ -z "$SSH_CIDRS" ]; then
+            echo "::error::Repository variable SSH_CIDRS is not set. Add it under" \
+                 "Settings > Secrets and variables > Actions > Variables as a JSON" \
+                 "list, for example [\"203.0.113.4/32\"]."
+            exit 1
+          fi
+
+          if ! echo "$SSH_CIDRS" | jq -e 'type == "array" and length > 0' > /dev/null 2>&1; then
+            echo "::error::SSH_CIDRS must be a non-empty JSON array, for example" \
+                 "[\"203.0.113.4/32\"]. Got: $SSH_CIDRS"
+            exit 1
+          fi
+
+          echo "TF_VAR_ssh_cidrs=$SSH_CIDRS" >> "$GITHUB_ENV"
+          echo "Exported TF_VAR_ssh_cidrs with $(echo "$SSH_CIDRS" | jq 'length') CIDR(s)."
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3

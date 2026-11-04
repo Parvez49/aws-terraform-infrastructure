@@ -41,11 +41,6 @@ jobs:
       run:
         working-directory: environments/${{ inputs.environment }}
 
-    # Applying a saved plan file does not re-evaluate variables, but init and
-    # any refresh still load them. Kept in sync with terraform-plan.yml.
-    env:
-      TF_VAR_ssh_cidrs: ${{ vars.SSH_CIDRS }}
-
     steps:
       # These two run before checkout, so the job-level working-directory
       # (environments/<env>) does not exist yet — override it to the workspace.
@@ -115,6 +110,34 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ steps.plan-run.outputs.head_sha }}
+
+      # Applying a saved plan does not re-evaluate variables, but init still
+      # loads them. Exported conditionally for the same reason as in
+      # terraform-plan.yml: an empty TF_VAR_ breaks init with a misleading
+      # "Missing expression" HCL error.
+      - name: Resolve ssh_cidrs
+        env:
+          SSH_CIDRS: ${{ vars.SSH_CIDRS }}
+        run: |
+          if ! grep -qr 'variable "ssh_cidrs"' . ; then
+            echo "This root does not declare ssh_cidrs, nothing to export."
+            exit 0
+          fi
+
+          if [ -z "$SSH_CIDRS" ]; then
+            echo "::error::Repository variable SSH_CIDRS is not set. Add it under" \
+                 "Settings > Secrets and variables > Actions > Variables as a JSON" \
+                 "list, for example [\"203.0.113.4/32\"]."
+            exit 1
+          fi
+
+          if ! echo "$SSH_CIDRS" | jq -e 'type == "array" and length > 0' > /dev/null 2>&1; then
+            echo "::error::SSH_CIDRS must be a non-empty JSON array, for example" \
+                 "[\"203.0.113.4/32\"]. Got: $SSH_CIDRS"
+            exit 1
+          fi
+
+          echo "TF_VAR_ssh_cidrs=$SSH_CIDRS" >> "$GITHUB_ENV"
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
