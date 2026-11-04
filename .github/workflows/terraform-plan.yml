@@ -57,7 +57,10 @@ jobs:
       # init. Exporting it only when it is actually set keeps the failure clear.
       - name: Resolve ssh_cidrs
         env:
-          SSH_CIDRS: ${{ vars.SSH_CIDRS }}
+          # Accepts either form. Use the secret rather than the variable if the
+          # repository is public: secrets are masked in job logs, variables are
+          # printed in plain text, and these are home IP addresses.
+          SSH_CIDRS: ${{ vars.SSH_CIDRS || secrets.SSH_CIDRS }}
         run: |
           if ! grep -qr 'variable "ssh_cidrs"' . ; then
             echo "This root does not declare ssh_cidrs, nothing to export."
