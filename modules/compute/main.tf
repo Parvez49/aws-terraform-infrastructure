@@ -4,7 +4,7 @@ resource "aws_key_pair" "main" {
 
   tags = {
     Name      = var.key_name
-    Project   = "django-infrastructure"
+    Project   = var.project_name
     ManagedBy = "Terraform"
   }
 }
@@ -35,7 +35,7 @@ resource "aws_instance" "main" {
   tags = {
     Name        = var.instance_name
     Environment = var.environment
-    Project     = "django-infrastructure"
+    Project     = var.project_name
     ManagedBy   = "Terraform"
   }
 }
